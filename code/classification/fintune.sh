@@ -1,0 +1,18 @@
+python3 ./code/classification/train.py \
+--vocab_path ./data/vocab/sc-air-bert/vocab_3mer.pkl \
+--train_dataset ./data/classification/sc-air-bert/Ebola/train.tsv \
+--valid_dataset ./data/classification/sc-air-bert/Ebola/valid.tsv \
+--test_dataset ./data/classification/sc-air-bert/Ebola/test.tsv \
+--bert_model ./checkpoint/pretrain_models/ab_3mer_len79 \
+--output_path ./result/finetuning \
+--lr_b 0.0001 \
+--lr_c 0.001 \
+--seq_len  79 \
+--prob 0.0 \
+--finetune 1 \
+--NNI_Search 0 \
+--in_features 512 \
+--class_name 1 \
+--chain 2 \
+--batch_size 32 \
+--seed 51

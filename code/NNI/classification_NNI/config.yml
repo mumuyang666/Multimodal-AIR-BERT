@@ -1,0 +1,27 @@
+
+authorName: linyangxiao
+experimentName: ImmuBLAST4
+
+trialConcurrency: 16
+maxExecDuration: 1111h
+maxTrialNum: 50000
+
+trainingServicePlatform: local
+searchSpacePath: /aceph/louisyuzhao/buddy2/linyangxiao/SC-AIR/SC-AIR-BERT-Multi/code/NNI/classification_NNI/search_space.json
+useAnnotation: false
+logDir: /aceph/louisyuzhao/buddy2/linyangxiao/SC-AIR/SC-AIR-BERT-Multi/NNIlog
+#
+multiThread: True
+tuner:
+    builtinTunerName: TPE
+    classArgs:
+        optimize_mode: maximize
+    gpuIndices: "0,1,2,3,4,5,6,7"
+trial:
+    command: bash classification_train.sh
+    codeDir: ./
+    gpuNum: 1
+
+localConfig:
+    maxTrialNumPerGpu: 2
+    useActiveGpu: true

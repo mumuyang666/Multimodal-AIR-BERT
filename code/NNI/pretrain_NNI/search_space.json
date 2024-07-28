@@ -1,0 +1,9 @@
+{     
+    "lr":{"_type":"choice","_value":[0.0001]},
+    "epochs":{"_type":"choice","_value":[50]},
+    "hidden":{"_type":"choice","_value":[512]},
+    "layers":{"_type":"choice","_value":[6,8]},
+    "attn_heads":{"_type":"choice","_value":[4]},
+    "batch_size":{"_type":"choice","_value":[1024]},
+    "prob":{"_type":"choice","_value":[0.10]}
+}
