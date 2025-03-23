@@ -38,4 +38,9 @@ The pretrained model is given in : `./checkpoint/pretrain_models/ab_3mer_len79.e
 
 (2)finetune
 
-bash ./code/finetune.sh
+bash ./finetune.sh
+
+
+(3)inference
+
+bash ./inference.sh
