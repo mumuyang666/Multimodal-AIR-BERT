@@ -1,0 +1,16 @@
+python3 ./code/bert/main_mlm.py \
+--train_dataset ./data/pretrain/10x-NPC-IBD-IEDB-VDJDB_ab/3mer_8_2/train.tsv \
+--test_dataset ./data/pretrain/10x-NPC-IBD-IEDB-VDJDB_ab/3mer_8_2/test.tsv \
+--vocab_path ./data/vocab/vocab_3mer.pkl \
+--output_path ./result/pretrain \
+--seq_len  79 \
+--num_workers 32 \
+--embedding_mode normal \
+--lr 0.0001 \
+--epochs 50 \
+--hidden 512 \
+--layers 6 \
+--attn_heads 4 \
+--batch_size 16 \
+--prob 0.1 \
+--process_mode MLM

@@ -13,7 +13,7 @@ arr=("GLCTLVAML" "IVTDFSVIK" "TTDPSFLGRY" "AVFDRKSDAK" "GILGFVFTL" "KLGGALQAK" "
 for i in "${arr[@]}"
     do
         python3 ./code/classification/train_multimodal.py \
-    --vocab_path ./data/vocab/vocab_2mer.pkl \
+    --vocab_path ./data/vocab/vocab_3mer.pkl \
     --gene_token ./data/classification/gene_full.csv \
     -c ./data/classification/$i/train_modified.tsv \
     -d ./data/classification/$i/valid_modified.tsv \
@@ -29,6 +29,6 @@ for i in "${arr[@]}"
     --class_name $i \
     --chain 2 \
     --batch_size 64 \
-    --seed $seed
+    --seed 80
     done
 done

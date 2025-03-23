@@ -3,7 +3,7 @@ from os import system
 import os.path
 from os.path import isdir
 import sys
-sys.path.append('./code/bert')
+sys.path.append('./code/')
 import time
 import torch
 from torch.utils.data import DataLoader
@@ -21,7 +21,7 @@ from sklearn.metrics import roc_auc_score
 import numpy as np
 import pandas as pd
 
-import nni
+# import nni
 import logging
 import random
 
@@ -143,7 +143,7 @@ def train(bert_model, gene_model, model, gene_optimizer, bert_optimizer, optimiz
         # print("batch %d loss:%f accuracy:%f" % (i, loss, acc))
 
     auc = roc_auc_score(total_real.detach().cpu().numpy(), total_pred.detach().cpu().numpy())
-
+    print('testauc',auc)
     return epoch_loss/total_len, epoch_acc/total_len, auc, total_real.detach().cpu().numpy(), total_pred.detach().cpu().numpy(), total_ID.numpy()
 
 # early stop
@@ -192,18 +192,18 @@ if __name__ == '__main__':
                         default = os.path.abspath('/aceph/louisyuzhao/buddy2/linyangxiao/SC-AIR/SC-AIR-BERT-Multi/data/classification/gene_full.csv'), 
                         help="built vocab model path with bert-vocab"
                     )
-    parser.add_argument("-c", "--train_dataset", 
-                        required=True, 
-                        type=str, 
-                        default=os.path.abspath('../../data/classification/10x/10x_ab_3mer_7_2_1/AVFDRKSDAK/train_modified.tsv'), 
-                        help="train dataset"
-                    )
-    parser.add_argument("-d", "--valid_dataset", 
-                        required=True, 
-                        type=str, 
-                        default=os.path.abspath('../../data/classification/10x/10x_ab_3mer_7_2_1/AVFDRKSDAK/valid_modified.tsv'), 
-                        help="valid dataset"
-                    )
+    # parser.add_argument("-c", "--train_dataset", 
+    #                     required=True, 
+    #                     type=str, 
+    #                     default=os.path.abspath('../../data/classification/10x/10x_ab_3mer_7_2_1/AVFDRKSDAK/train_modified.tsv'), 
+    #                     help="train dataset"
+    #                 )
+    # parser.add_argument("-d", "--valid_dataset", 
+    #                     required=True, 
+    #                     type=str, 
+    #                     default=os.path.abspath('../../data/classification/10x/10x_ab_3mer_7_2_1/AVFDRKSDAK/valid_modified.tsv'), 
+    #                     help="valid dataset"
+    #                 )
     parser.add_argument("-t", "--test_dataset", 
                         type=str, 
                         default=os.path.abspath('../../data/classification/10x/10x_ab_3mer_7_2_1/AVFDRKSDAK/test_modified.tsv'), 
@@ -231,7 +231,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--cuda_devices", type=int, nargs='+', default=None, help="CUDA device ids")
     parser.add_argument("--with_cuda", type=bool,  default=True, help="")
-
+    parser.add_argument("--load_model", type=str, default=None, help="load model")
     parser.add_argument("--class_name", type=str, default='AVFDRKSDAK', help="class name")
     parser.add_argument("--finetune", type=int, default=1, help="finetune bert")
 
@@ -254,8 +254,8 @@ if __name__ == '__main__':
         path = os.path.join(args.output_path,class_name)
         seed = args.seed
 
-    train_dataset = args.train_dataset
-    valid_dataset = args.valid_dataset
+    # train_dataset = args.train_dataset
+    # valid_dataset = args.valid_dataset
     test_dataset = args.test_dataset
 
     setup_seed(seed)
@@ -275,18 +275,18 @@ if __name__ == '__main__':
         Dataset = Dataset_singleSentence
 
     print("Loading Train Dataset")
-    train_dataset = DatasetMultimodal(train_dataset, 
-                                vocab, 
-                                seq_len=args.seq_len,
-                                on_memory=True,
-                                prob = args.prob,
-                                class_name = class_name)
-    valid_dataset = DatasetMultimodal(valid_dataset, 
-                                vocab, 
-                                seq_len=args.seq_len,
-                                on_memory=True,
-                                prob = args.prob,
-                                class_name = class_name)
+    # train_dataset = DatasetMultimodal(train_dataset, 
+    #                             vocab, 
+    #                             seq_len=args.seq_len,
+    #                             on_memory=True,
+    #                             prob = args.prob,
+    #                             class_name = class_name)
+    # valid_dataset = DatasetMultimodal(valid_dataset, 
+    #                             vocab, 
+    #                             seq_len=args.seq_len,
+    #                             on_memory=True,
+    #                             prob = args.prob,
+    #                             class_name = class_name)
     test_dataset = DatasetMultimodal(test_dataset, 
                                 vocab, 
                                 seq_len=args.seq_len,
@@ -294,14 +294,19 @@ if __name__ == '__main__':
                                 prob = args.prob,
                                 class_name = class_name)
     print("Creating Dataloader")
-    train_data_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=32, shuffle=True)
-    valid_data_loader = DataLoader(valid_dataset, batch_size=args.batch_size, num_workers=32)
+    # train_data_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=32, shuffle=True)
+    # valid_data_loader = DataLoader(valid_dataset, batch_size=args.batch_size, num_workers=32)
     test_data_loader = DataLoader(test_dataset, batch_size=args.batch_size, num_workers=32)
     print("数据载入完成")
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    checkpoint = torch.load(args.load_model)
+    print("设备配置完成")
+    # checkpoint = torch.load("path/to/saved_model.pth", map_location=device)
+    # 加载BERT权重
+    bert_model = torch.load(args.bert_model)
 
     # #设置运行设备
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print("设备配置完成")
+
 
     # load bert model
     bert_model = torch.load(args.bert_model)
@@ -331,7 +336,14 @@ if __name__ == '__main__':
     model = FusionModel(networkOption)
     model = model.to(device)
     print("全连接层模型创建完成")
+    bert_model.load_state_dict(checkpoint["bert_model"])
 
+    # 加载基因编码器权重
+    gene_model.load_state_dict(checkpoint["gene_model"])
+
+    # 加载融合分类层权重
+    model.load_state_dict(checkpoint["fc_model"])
+    print("权重加载完成")
     # if args.with_cuda and torch.cuda.device_count() > 1:
     #     print("Using %d GPUS" % torch.cuda.device_count())
     #     bert_model = torch.nn.DataParallel(bert_model, device_ids=args.cuda_devices)
@@ -366,7 +378,7 @@ if __name__ == '__main__':
     crit = torch.nn.BCELoss()
   
     #开始训练
-    print("Training Start")
+    # print("Training Start")
     index = 0
 
     train_loss_total,val_loss_total = [],[]
@@ -391,162 +403,76 @@ if __name__ == '__main__':
     if not os.path.exists(path):
         os.makedirs(path, exist_ok=True)
 
-    while(True):
-        start_time = time.time() 
-        epoch_train_loss, epoch_train_acc,epoch_train_auc, epoch_train_real, epoch_train_pred, epoch_train_ID = train(bert_model, 
-                                                                                                                    gene_model, 
-                                                                                                                    model, 
-                                                                                                                    gene_optimizer,
-                                                                                                                    bert_optimizer,
-                                                                                                                    optimizer,
-                                                                                                                    dataset_loader = train_data_loader, 
-                                                                                                                    train_phase = True, 
-                                                                                                                    device = device
+
+
+    with torch.no_grad():
+
+        epoch_test_loss, epoch_test_acc,epoch_test_auc,epoch_test_real, epoch_test_pred, epoch_test_ID = train(bert_model, 
+                                                                                                                gene_model, 
+                                                                                                                model, 
+                                                                                                                gene_optimizer,
+                                                                                                                bert_optimizer,
+                                                                                                                optimizer,
+                                                                                                                dataset_loader = test_data_loader,
+                                                                                                                train_phase=False,
+                                                                                                                device = device
                                                                                                             )
-        epoch_train_loss_list.append(epoch_train_loss)
-        epoch_train_auc_list.append(epoch_train_auc)
-        index += 1
-        print("EPOCH %d_train loss:%f accuracy:%f auc:%f" % (index, epoch_train_loss, epoch_train_acc, epoch_train_auc))
+        epoch_test_loss_list.append(epoch_test_loss)
+        epoch_test_auc_list.append(epoch_test_auc)
+        # print("EPOCH %d_test loss:%f accuracy:%f auc:%f" % (index, epoch_test_loss, epoch_test_acc,epoch_test_auc))
+        # end_time = time.time()  # 记录epoch结束的时间
+        # epoch_time = end_time - start_time  # 计算epoch的运行时间
+        # print("Time for this epoch: %.2f seconds" % epoch_time)  #
         
-        train_loss_total.append(epoch_train_loss)
-        stop_criterion = 0.001
-        stop_criterion_window = 10
-
-        with torch.no_grad():
-            epoch_valid_loss, epoch_valid_acc,epoch_valid_auc,epoch_valid_real, epoch_valid_pred, epoch_valid_ID = train(bert_model, 
-                                                                                                                        gene_model, 
-                                                                                                                        model, 
-                                                                                                                        gene_optimizer,
-                                                                                                                        bert_optimizer,
-                                                                                                                        optimizer,
-                                                                                                                        dataset_loader = valid_data_loader,
-                                                                                                                        train_phase=False,
-                                                                                                                        device = device
-                                                                                                                        )
-            epoch_valid_loss_list.append(epoch_valid_loss)
-            epoch_valid_auc_list.append(epoch_valid_auc)
-            print("EPOCH %d_valid loss:%f accuracy:%f auc:%f" % (index, epoch_valid_loss, epoch_valid_acc, epoch_valid_auc))
-            
-            val_loss_total.append(epoch_valid_loss)
-
-            epoch_test_loss, epoch_test_acc,epoch_test_auc,epoch_test_real, epoch_test_pred, epoch_test_ID = train(bert_model, 
-                                                                                                                    gene_model, 
-                                                                                                                    model, 
-                                                                                                                    gene_optimizer,
-                                                                                                                    bert_optimizer,
-                                                                                                                    optimizer,
-                                                                                                                    dataset_loader = test_data_loader,
-                                                                                                                    train_phase=False,
-                                                                                                                    device = device
-                                                                                                                )
-            epoch_test_loss_list.append(epoch_test_loss)
-            epoch_test_auc_list.append(epoch_test_auc)
-            print("EPOCH %d_test loss:%f accuracy:%f auc:%f" % (index, epoch_test_loss, epoch_test_acc,epoch_test_auc))
-            end_time = time.time()  # 记录epoch结束的时间
-            epoch_time = end_time - start_time  # 计算epoch的运行时间
-            print("Time for this epoch: %.2f seconds" % epoch_time)  #
-            
-            # 保存valid_loss最小的模型和结果
-            if(min_loss > epoch_valid_loss):
-                min_loss = epoch_valid_loss
-                min_loss_auc = epoch_test_auc
-                min_loss_acc = epoch_test_acc
-                # 保存模型
-                model_output = os.path.join(path,'min_loss_model.pth')
-                state = {
-                    'bert_model':bert_model.state_dict(),
-                    'gene_model': gene_model.state_dict(),  
-                    'fc_model':model.state_dict()
-                }
-                torch.save(state, model_output)
-                # model.to(device)
-                # 保存预测结果
-                data = {
-                    'ID':epoch_test_ID,
-                    'real':epoch_test_real.tolist(),
-                    'pred':epoch_test_pred.tolist()
-                }
-                df = pd.DataFrame(data)
-                df.to_csv(os.path.join(path,'min_loss_result.csv'),index=None)
-
-            # 保存valid_auc最大的模型和结果
-            if(max_auc<epoch_valid_auc):
-                max_auc = epoch_valid_auc
-                max_auc_auc = epoch_test_auc
-                max_auc_acc = epoch_test_acc
-                model_output = os.path.join(path,'max_auc_model.pth')
-                state = {
-                    'bert_model':bert_model.state_dict(),
-                    'gene_model': gene_model.state_dict(),  
-                    'fc_model':model.state_dict()
-                }
-                torch.save(state, model_output)
-                # model.to(device)
-                # 保存预测结果
-                data = {
-                    'ID':epoch_test_ID,
-                    'real':epoch_test_real.tolist(),
-                    'pred':epoch_test_pred.tolist()
-                }
-                df = pd.DataFrame(data)
-                df.to_csv(os.path.join(path,'max_auc_result.csv'),index=None)
-                
-            # 删除注释
-            if epoch > epochs_min:
-                if val_loss_total:
-                    stop_check_list.append(stop_check(val_loss_total, stop_criterion, stop_criterion_window))
-                    if np.sum(stop_check_list[-3:]) >= 3:
-                        # 保存最后一个epochs的结果
-                        last_epoch_auc = epoch_test_auc
-                        last_epoch_acc = epoch_test_acc
-                        model_output = os.path.join(path,'last_epoch_model.pth')
-                        state = {
-                            'bert_model':bert_model.state_dict(),
-                            'gene_model': gene_model.state_dict(),  
-                            'fc_model':model.state_dict()
-                        }
-                        torch.save(state, model_output)
-                        # model.to(device)
-                        # 保存预测结果
-                        data = {
-                            'ID':epoch_test_ID,
-                            'real':epoch_test_real.tolist(),
-                            'pred':epoch_test_pred.tolist()
-                        }
-                        df = pd.DataFrame(data)
-                        df.to_csv(os.path.join(path,'last_epoch_result.csv'),index=None)
-                        break
-                
-            # if(epoch==5):
-            #     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr_c*0.1)
-            #     bert_optimizer = torch.optim.Adam(bert_model.parameters(), lr=args.lr_b*0.1)
+        # 保存valid_loss最小的模型和结果
+        # if(min_loss > epoch_valid_loss):
+        #     min_loss = epoch_valid_loss
+        #     min_loss_auc = epoch_test_auc
+        #     min_loss_acc = epoch_test_acc
+        #     # 保存模型
+        #     model_output = os.path.join(path,'min_loss_model.pth')
+        #     state = {
+        #         'bert_model':bert_model.state_dict(),
+        #         'fc_model':model.state_dict()
+        #     }
+        #     torch.save(state, model_output)
+            # model.to(device)
+            # 保存预测结果
+        data = {
+            'ID':epoch_test_ID,
+            'real':epoch_test_real.tolist(),
+            'pred':epoch_test_pred.tolist()
+        }
+        df = pd.DataFrame(data)
+        df.to_csv(os.path.join(path,'test.csv'),index=None)
+        # if(epoch==5):
+        #     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr_c*0.1)
+        #     bert_optimizer = torch.optim.Adam(bert_model.parameters(), lr=args.lr_b*0.1)
 
 
-        # if(epoch>29):
-        #     break
-        epoch += 1
 
-    auc_csv = pd.DataFrame(columns=['lr_b','lr_c'])
-    auc_csv['max_auc_auc'] = [max_auc_auc]
-    auc_csv['max_auc_acc'] = [max_auc_acc.item()]
 
-    auc_csv['min_loss_auc'] = [min_loss_auc]
-    auc_csv['min_loss_acc'] = [min_loss_acc.item()]
+    # auc_csv = pd.DataFrame(columns=['lr_b','lr_c'])
+    # auc_csv['max_auc_auc'] = [max_auc_auc]
+    # auc_csv['max_auc_acc'] = [max_auc_acc.item()]
 
-    auc_csv['last_epoch_auc'] = [last_epoch_auc]
-    auc_csv['last_epoch_acc'] = [last_epoch_acc.item()]
+    # auc_csv['min_loss_auc'] = [min_loss_auc]
+    # auc_csv['min_loss_acc'] = [min_loss_acc.item()]
 
-    auc_csv['bert_model'] = args.bert_model
-    auc_csv['finetune'] = args.finetune
-    auc_csv['prob'] = args.prob
-    auc_csv['seq_len'] = args.seq_len
-    auc_csv['batch_size'] = args.batch_size
-    auc_csv['lr_b'] = args.lr_b
-    auc_csv['lr_c'] = args.lr_c
+    # auc_csv['last_epoch_auc'] = [last_epoch_auc]
+    # auc_csv['last_epoch_acc'] = [last_epoch_acc.item()]
 
-    auc_csv.to_csv(os.path.join(path,'parameters.csv'),index=None)
+    # auc_csv['bert_model'] = args.bert_model
+    # auc_csv['finetune'] = args.finetune
+    # auc_csv['prob'] = args.prob
+    # auc_csv['seq_len'] = args.seq_len
+    # auc_csv['batch_size'] = args.batch_size
+    # auc_csv['lr_b'] = args.lr_b
+    # auc_csv['lr_c'] = args.lr_c
 
-    nni.report_final_result(min_loss_auc)
+    # auc_csv.to_csv(os.path.join(path,'parameters.csv'),index=None)
+
+    # nni.report_final_result(min_loss_auc)
 
     # plot(epoch_train_loss_list, 
     #      epoch_train_auc_list,
@@ -564,5 +490,5 @@ if __name__ == '__main__':
     #      class_name + '_test','epochs'
     #      )
 
-    print('auc:',min_loss_auc)
-    print('acc:',min_loss_acc.item())
+    # print('auc:',min_loss_auc)
+    # print('acc:',min_loss_acc.item())
